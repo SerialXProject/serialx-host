@@ -4,7 +4,7 @@
 
 Una libreria Arduino **leggera e veloce** per debug remoto, controllo e test di dispositivi embedded via porta seriale. Leggi/scrivi variabili e richiama funzioni tramite comandi testuali senza ricompilare.
 
-**📖 Documentazione completa:** [SerialX Docs](localhost:3001)
+**📖 Documentazione completa:** [SerialX Docs](https://serialx.github.io/serialx-docs)
 
 ## ⚡ Quick Start
 
