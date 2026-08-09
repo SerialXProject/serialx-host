@@ -66,16 +66,6 @@ void loop() {
 }
 
 
-// Debug
-int main() {
-    setup();
-    while (true) {
-        loop();
-    }
-    return 0;
-}
-
-
 /*
 SERIAL COMMANDS AVAILABLE:
 
