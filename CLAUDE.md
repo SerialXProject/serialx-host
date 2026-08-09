@@ -10,8 +10,9 @@ specifiche per le sessioni con Claude.
 
 Libreria Arduino C++ (no dipendenze oltre `Arduino.h`) che espone
 variabili e funzioni del firmware come comandi testuali via seriale.
-Nessuna toolchain di build "vera": si valida compilando `tests/main.cpp`
-con g++ per un target desktop (stub Arduino in `tests/Arduino.h/.cpp`).
+Nessuna toolchain di build "vera": si valida compilando
+`tests/sketch/sketch.ino.cpp` con g++ per un target desktop, cross-platform
+(stub Arduino in `tests/emulator/Arduino.h/.cpp`, Windows/Linux/macOS).
 
 ## Prima di iniziare
 

@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdint>
-#include <windows.h>
 
 // --- COMPATIBILITÀ STRUGGERI ARDUINO AVR / FLASH ---
 #define PROGMEM
@@ -35,7 +34,7 @@ public:
     // Metodi di utilità per far funzionare la classe con la seriale e le funzioni standard
     const char* c_str() const { return val.c_str(); }
     operator std::string() const { return val; }
-    
+
     // Per permettere il .length() o simili se usati nel codice
     size_t length() const { return val.length(); }
 };
@@ -55,11 +54,17 @@ void digitalWrite(int pin, int val);
 long random(int min, int max);
 void delay(int ms);
 
-// --- EMULAZIONE HARDWARE SERIAL AVANZATA ---
+// --- EMULAZIONE HARDWARE SERIAL AVANZATA (cross-platform) ---
+//
+// L'accesso reale alla porta seriale (Win32 vs POSIX/termios) è delegato
+// a un'implementazione specifica per piattaforma: vedi
+// serial_port_win.cpp / serial_port_posix.cpp. Questa classe conosce solo
+// un handle opaco (void*), così l'header resta compilabile ovunque senza
+// includere windows.h o termios.h qui.
 class PC_HardwareSerial
 {
 private:
-    HANDLE hSerial;
+    void* portHandle; // opaco: implementazione reale nel .cpp specifico per piattaforma
     bool connected;
 
 public:
@@ -74,6 +79,7 @@ public:
     // Overload completi per print
     void print(const char *s);
     void print(const std::string &s); // Risolve l'uso di String
+    void print(char c);
     void print(int n);
     void print(unsigned int n);
     void print(long n);

@@ -29,9 +29,16 @@ src/
     Messages.h              # Stringhe di risposta (PROGMEM), versioni SERIAL/JIT
 examples/                  # Sketch .ino dimostrativi (Base, Complete, FullFeature)
 tests/
-  Arduino.h / Arduino.cpp  # Stub minimale dell'API Arduino per compilare su PC
-  main.cpp                  # Programma di test che monta la shell e simula Serial da stdin
-build.ps1                  # Compila tests/ + src/*.cpp in build/main.exe (PowerShell, g++)
+  emulator/
+    Arduino.h / Arduino.cpp       # Stub minimale dell'API Arduino per compilare su PC
+    serial_port_win.cpp            # Accesso porta seriale reale (Windows)
+    serial_port_posix.cpp          # Accesso porta seriale reale (Linux/macOS)
+  sketch/
+    sketch.ino.cpp / sketch.h      # "Sketch" di prova: setup()/loop(), identico a un .ino
+  runner/
+    main.cpp                       # Bootstrap desktop: chiama setup() poi loop() in ciclo
+build.ps1                  # Compila tests/ + src/*.cpp in build/main.exe (PowerShell, g++;
+                              # sceglie automaticamente serial_port_win.cpp o _posix.cpp)
 install.ps1                # Installa la libreria nella cartella Arduino Libraries
 library.properties          # Metadati per Arduino Library Manager
 ```
@@ -45,26 +52,37 @@ replica lo stesso comando g++ a mano (vedi sotto).
 Non esiste un vero Arduino collegato in questo ambiente: il modo per
 validare le modifiche è compilare ed eseguire il target "desktop" in
 `tests/`, che fornisce stub di `Serial`, `pinMode`, `digitalWrite`, ecc.
-in `tests/Arduino.h/.cpp`.
+in `tests/emulator/Arduino.h/.cpp`. L'accesso reale alla porta seriale è
+cross-platform: `serial_port_win.cpp` su Windows, `serial_port_posix.cpp`
+(termios) su Linux/macOS — `build.ps1` sceglie quello giusto in automatico.
+La porta usata a runtime si imposta con la variabile d'ambiente
+`SERIALX_TEST_PORT` (default `COM4` su Windows, `/dev/pts/4` su Linux/macOS).
 
-Comando equivalente a `build.ps1` (usalo se non hai `pwsh`):
+Comando equivalente a `build.ps1` su Linux/macOS (usalo se non hai `pwsh`):
 
 ```bash
 mkdir -p build
-g++ -std=c++17 -Isrc -Itests tests/main.cpp tests/Arduino.cpp src/SerialXShell.cpp -o build/main
+g++ -std=c++17 -Isrc -Itests/emulator -Itests/sketch \
+  tests/runner/main.cpp tests/sketch/sketch.ino.cpp \
+  tests/emulator/Arduino.cpp tests/emulator/serial_port_posix.cpp \
+  src/SerialXShell.cpp -o build/main
 ```
 
-`tests/main.cpp` registra un set di variabili di ogni tipo supportato,
-due funzioni (`led_on`/`led_off`) e una variabile virtuale (`sensor_read`),
-poi entra in un loop che legge comandi. Usalo per verificare a mano che un
-comando (es. `gi temperature`, `sb led_state 1`, `r led_on`, `h`) si
-comporti come atteso dopo una modifica.
+Su Windows sostituisci `serial_port_posix.cpp` con `serial_port_win.cpp`.
+
+`tests/sketch/sketch.ino.cpp` registra un set di variabili di ogni tipo
+supportato, due funzioni (`led_on`/`led_off`) e una variabile virtuale
+(`sensor_read`), poi entra in un loop che legge comandi. È il file da
+modificare per verificare a mano che un comando (es. `gi temperature`,
+`sb led_state 1`, `r led_on`, `h`) si comporti come atteso dopo una
+modifica — è l'unico file di `tests/` pensato per essere editato,
+il contenuto di `tests/emulator/` e `tests/runner/` resta stabile.
 
 **Non esistono test automatici (unit test/asserzioni)** in questo repo:
 la verifica è manuale via l'eseguibile compilato. Se aggiungi una feature
-non toccata da `tests/main.cpp`, valuta se estendere quel file per coprirla
-(registrando la nuova variabile/funzione), così chi verrà dopo può
-riprodurre il test a mano.
+non toccata da `tests/sketch/sketch.ino.cpp`, valuta se estendere quel file
+per coprirla (registrando la nuova variabile/funzione), così chi verrà dopo
+può riprodurre il test a mano.
 
 ## Il flag system in `config.h`
 
@@ -164,8 +182,8 @@ con parsing generico. Occhio a questi dettagli quando modifichi
   lì per permettere build ridotte su microcontrollori con poca flash.
 - Non modificare la firma pubblica di `SerialXShell` (costruttore,
   `addVariable`/`addFunction`/`addVirtualVariable`) senza aggiornare tutti
-  e tre gli esempi in `examples/` e `tests/main.cpp`, che la usano
-  direttamente.
+  e tre gli esempi in `examples/` e `tests/sketch/sketch.ino.cpp`, che la
+  usano direttamente.
 - Non committare `build/main.exe` se lo rigeneri: è già tracciato nel
   repo, ma è un artefatto di build — se lo aggiorni per test locali va
   bene, ma non è codice sorgente da revisionare.
