@@ -1,5 +1,6 @@
 #pragma once
-#include <Arduino.h>
+
+#include "SerialXCommunication.h"
 #include "config.h"
 #include "models/serialVariable.h"
 #include "models/serialFunction.h"
@@ -41,6 +42,7 @@ public:
     SerialVariable* getVariable(int idx) { return idx < variableCount ? variables[idx] : nullptr; }
     
 private:
+    SerialXCommunication communication;
     int baudRate;
     bool isCommunicationOpen;
 

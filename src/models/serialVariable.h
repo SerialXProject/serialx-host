@@ -1,5 +1,11 @@
 #pragma once
-#include <Arduino.h>
+
+#if defined(ARDUINO)
+#include "Arduino.h"
+#else
+#include <string>
+#include <cstdint>
+#endif
 
 struct SerialVariable {
     const char* name;              // Pointer to name string
@@ -22,8 +28,11 @@ struct SerialVariable {
         : name(n), variable(&var), type('f'), canWrite(write) {}
 #endif
 
-#if SERIALX_SUPPORT_STRING
+#if SERIALX_SUPPORT_STRING && defined(ARDUINO)
     SerialVariable(const char* n, String& var, bool write = true)
+    : name(n), variable(&var), type('s'), canWrite(write) {}
+#elif SERIALX_SUPPORT_STRING
+    SerialVariable(const char* n, std::string& var, bool write = true)
     : name(n), variable(&var), type('s'), canWrite(write) {}
 #endif
 

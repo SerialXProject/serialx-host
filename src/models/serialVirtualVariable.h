@@ -1,5 +1,11 @@
 #pragma once
-#include <Arduino.h>
+
+#if defined(ARDUINO)
+#include "Arduino.h"
+#else
+#include <string>
+#include <cstdint>
+#endif
 
 // Virtual Variable - read-only variable backed by a getter function
 // Allows exposing computed/dynamic values as if they were actual variables
@@ -23,8 +29,11 @@ struct SerialVirtualVariable {
         : name(n), getter((void*)g), type('f') {}
 #endif
 
-#if SERIALX_SUPPORT_STRING
+#if SERIALX_SUPPORT_STRING && defined(ARDUINO)
     SerialVirtualVariable(const char* n, String (*g)())
+        : name(n), getter((void*)g), type('s') {}
+#elif SERIALX_SUPPORT_STRING
+    SerialVirtualVariable(const char* n, std::string (*g)())
         : name(n), getter((void*)g), type('s') {}
 #endif
 
