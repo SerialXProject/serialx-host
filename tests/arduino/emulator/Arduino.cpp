@@ -24,9 +24,39 @@ long random(int min, int max) { return max <= min ? min : min + (rand() % (max -
 // e usleep()/nanosleep() di POSIX con un'unica implementazione).
 void delay(int ms) { std::this_thread::sleep_for(std::chrono::milliseconds(ms)); }
 
+
+void String::trim()
+{
+    size_t start = val.find_first_not_of(" \t\n\r");
+    if (start == std::string::npos) {
+        val.clear();
+        return;
+    }
+    size_t end = val.find_last_not_of(" \t\n\r");
+    val = val.substr(start, end - start + 1);
+}
+
 // --- Implementazione di PC_HardwareSerial indipendente dalla piattaforma ---
 // (begin/end/available/read sono invece definiti nel file serial_port_win.cpp
 // o serial_port_posix.cpp, scelto a compile-time in base al sistema operativo)
+
+PC_HardwareSerial::operator bool() const
+{
+    return connected;
+}
+
+String PC_HardwareSerial::readStringUntil(char terminator)
+{
+    String result = "";
+    while (available()) {
+        int c = read();
+        if (c < 0) break;
+        char ch = static_cast<char>(c);
+        if (ch == terminator) break;
+        result += ch;
+    }
+    return result;
+}
 
 void PC_HardwareSerial::print(const char *s)
 {

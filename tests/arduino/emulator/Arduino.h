@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <cstdint>
+#include <cstring>
 
 // --- COMPATIBILITÀ STRUGGERI ARDUINO AVR / FLASH ---
 #define PROGMEM
@@ -25,6 +26,31 @@ public:
     String(long n) : val(std::to_string(n)) {}
     String(unsigned int n) : val(std::to_string(n)) {}
     String(unsigned long n) : val(std::to_string(n)) {}
+
+    void trim();
+
+    String& operator+=(char c) {
+        val += c;
+        return *this;
+    }
+
+    String& operator+=(const char* s) {
+        val += s;
+        return *this;
+    }
+
+    String& operator+=(const String& rhs) {
+        val += rhs.val;
+        return *this;
+    }
+
+    String operator+(char c) const {
+        return String(val + c);
+    }
+
+    String operator+(const String& rhs) const {
+        return String(val + rhs.val);
+    }
 
     // Operatore + globale sicuro e senza ambiguità
     friend String operator+(const String& lhs, const String& rhs) {
@@ -100,6 +126,11 @@ public:
     void println(double f);
     void println(double f, int digits); // Risolve la precisione decimali
     void println(const __FlashStringHelper *s) { println((const char *)s); }
+
+    explicit operator bool() const;
+    String readStringUntil(char terminator);
+    void print(const String &s);
+    void println(const String &s);
 };
 
 extern PC_HardwareSerial Serial;

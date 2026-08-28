@@ -1,25 +1,33 @@
 #!/usr/bin/env pwsh
 
-New-Item -ItemType Directory build/ -Force | Out-Null
+# Imposta la directory di lavoro sulla cartella in cui risiede lo script
+Set-Location $PSScriptRoot
 
-$out = Join-Path build ("main" + ($IsWindows ? ".exe" : ""))
+$buildDir = Join-Path $PSScriptRoot "build"
+New-Item -ItemType Directory -Path $buildDir -Force | Out-Null
 
-# L'accesso alla porta seriale è implementato separatamente per piattaforma
-# (Win32 vs POSIX/termios): qui si sceglie quale dei due compilare.
-# Il percorso/nome della porta usata a runtime si imposta con la variabile
-# d'ambiente SERIALX_TEST_PORT (es. SERIALX_TEST_PORT=COM4 su Windows,
-# SERIALX_TEST_PORT=/dev/pts/4 su Linux), letta da tests/emulator/serial_port_*.cpp.
+$out = Join-Path $buildDir ("main" + ($IsWindows ? ".exe" : ""))
+
+# Selezione dell'implementazione seriale specifica per OS
 $serialImpl = $IsWindows `
-    ? "tests/emulator/serial_port_win.cpp" `
-    : "tests/emulator/serial_port_posix.cpp"
+    ? (Join-Path $PSScriptRoot "emulator/serial_port_win.cpp") `
+    : (Join-Path $PSScriptRoot "emulator/serial_port_posix.cpp")
 
-g++ -std=c++17 -Isrc -Itests/emulator -Itests/sketch `
-    tests/runner/main.cpp `
-    tests/sketch/sketch.ino.cpp `
-    tests/emulator/Arduino.cpp `
-    $serialImpl `
-    src/SerialXShell.cpp `
-    -o $out -static -static-libstdc++
+# Recupera tutti i file .cpp dentro la cartella src e le sue sottocartelle
+$srcPath = Resolve-Path "$PSScriptRoot/../../src"
+$srcFiles = (Get-ChildItem -Recurse -Filter *.cpp -Path $srcPath).FullName
+
+# Compilazione g++ con splatting (@srcFiles) per espandere tutti gli argomenti
+g++ -std=c++17 -DARDUINO=1 `
+    -I"$srcPath" `
+    -I"$PSScriptRoot/emulator" `
+    -I"$PSScriptRoot/sketch" `
+    "$PSScriptRoot/runner/main.cpp" `
+    "$PSScriptRoot/sketch/sketch.ino.cpp" `
+    "$PSScriptRoot/emulator/Arduino.cpp" `
+    "$serialImpl" `
+    @srcFiles `
+    -o "$out" -static -static-libstdc++
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host "✅ Ok: $out" -ForegroundColor Green
