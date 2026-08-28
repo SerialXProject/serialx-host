@@ -7,10 +7,9 @@ const int SerialXShell::SerialX_MinorVersion = 6;
 const int SerialXShell::SerialXJIT_MajorVersion = 1;
 const int SerialXShell::SerialXJIT_MinorVersion = 6;
 
-// Constructor
-// Forse usare i define
+// Constructor (forse usare define)
 SerialXShell::SerialXShell(int baud, int maxVars, int maxFuncs, int maxVirtualVars, const char* accessPassKey, const char* deviceNameCustom, const char* softwareVersionCustom)
-    : baudRate(baud), isCommunicationOpen(false), isAccessUnlocked(false),
+    : communication(baud), isCommunicationOpen(false), isAccessUnlocked(false),
       variableCount(0), maxVariables(maxVars),
       virtualVariableCount(0), maxVirtualVariables(maxVirtualVars),
       functionCount(0), maxFunctions(maxFuncs),
@@ -46,7 +45,9 @@ SerialXShell::~SerialXShell() {
 void SerialXShell::startCommunication() {
     if (isCommunicationOpen) return;
     
-    Serial.begin(baudRate);
+    communication.begin();
+    communication.open();
+
     isCommunicationOpen = true;
     isAccessUnlocked = false;
     inputPos = 0;
@@ -57,7 +58,7 @@ void SerialXShell::startCommunication() {
 void SerialXShell::closeCommunication() {
     if (!isCommunicationOpen) return;
     
-    Serial.end();
+    communication.close();
     isAccessUnlocked = false;
     isCommunicationOpen = false;
 }
@@ -117,21 +118,36 @@ SerialVirtualVariable* SerialXShell::findVirtualVariable(const char* name) {
 void SerialXShell::handleCommand(const char* cmd) {
     if (!cmd || strlen(cmd) == 0) return;
 
-    if (strcmp_P(cmd, PSTR("exit")) == 0) {
+#if defined(ARDUINO_ARCH_AVR)
+    if (strcmp_P(cmd, PSTR("exit")) == 0)
+#else
+    if (strcmp(cmd, "exit") == 0)
+#endif
+    {
         closeCommunication();
         return;
     }
 
-    if (strcmp_P(cmd, PSTR("i")) == 0) { // Info
+#if defined(ARDUINO_ARCH_AVR)
+    if (strcmp_P(cmd, PSTR("i")) == 0)
+#else
+    if (strcmp(cmd, "i") == 0) 
+#endif
+    { // Info
         printInfo();
         return;
     }
 
-    if (strcmp_P(cmd, PSTR("isAuthActive")) == 0) {
-#if SERIALX_ENABLE_AUTH
-    Serial.println(accessKey[0] != '\0' ? "1" : "0");
+#if defined(ARDUINO_ARCH_AVR)
+    if (strcmp_P(cmd, PSTR("isAuthActive")) == 0) 
 #else
-    Serial.println("0");
+    if (strcmp(cmd, "isAuthActive") == 0) 
+#endif
+    {
+#if SERIALX_ENABLE_AUTH
+    communication.sendLine(accessKey[0] != '\0' ? "1" : "0");
+#else
+    communication.sendLine("0");
 #endif
     return;
 }
@@ -139,7 +155,12 @@ void SerialXShell::handleCommand(const char* cmd) {
 // Check authentication FIRST
 #if SERIALX_ENABLE_AUTH
     if (accessKey[0] != '\0' && !isAccessUnlocked) {
-        if (strncmp_P(cmd, PSTR("akey "), 5) == 0) {
+    #if defined(ARDUINO_ARCH_AVR)
+        if (strncmp_P(cmd, PSTR("akey "), 5) == 0) 
+    #else
+        if (strncmp(cmd, "akey ", 5) == 0)
+    #endif
+        {
             authenticate(cmd + 5);
             return;
         }
@@ -237,70 +258,70 @@ void SerialXShell::getVariable(const char* cmd) {
 #if SERIALX_SUPPORT_BOOL
             case 'b': {
                 bool (*getter)() = (bool (*)())vVar->getter;
-                Serial.println(getter() ? 1 : 0);
+                communication.sendLine(getter() ? 1 : 0);
                 break;
             }
 #endif
 #if SERIALX_SUPPORT_INT
             case 'i': {
                 int (*getter)() = (int (*)())vVar->getter;
-                Serial.println(getter());
+                communication.sendLine(getter());
                 break;
             }
 #endif
 #if SERIALX_SUPPORT_FLOAT
             case 'f': {
                 float (*getter)() = (float (*)())vVar->getter;
-                Serial.println(getter(), 2);
+                communication.sendLine(getter(), 2);
                 break;
             }
 #endif
 #if SERIALX_SUPPORT_STRING
             case 's': {
-                String (*getter)() = (String (*)())vVar->getter;
-                Serial.println(getter());
+                StringType (*getter)() = (StringType (*)())vVar->getter;
+                communication.sendLine(getter());
                 break;
             }
 #endif
 #if SERIALX_SUPPORT_CHAR
             case 'c': {
                 char (*getter)() = (char (*)())vVar->getter;
-                Serial.println(getter());
+                communication.sendLine(getter());
                 break;
             }
 #endif
 #if SERIALX_SUPPORT_UINT8
             case 'u': {
                 uint8_t (*getter)() = (uint8_t (*)())vVar->getter;
-                Serial.println(getter());
+                communication.sendLine(getter());
                 break;
             }
 #endif
 #if SERIALX_SUPPORT_UINT16
             case 'w': {
                 uint16_t (*getter)() = (uint16_t (*)())vVar->getter;
-                Serial.println(getter());
+                communication.sendLine(getter());
                 break;
             }
 #endif
 #if SERIALX_SUPPORT_UINT32
             case 'd': {
                 uint32_t (*getter)() = (uint32_t (*)())vVar->getter;
-                Serial.println(getter());
+                communication.sendLine(getter());
                 break;
             }
 #endif
 #if SERIALX_SUPPORT_LONG
             case 'l': {
                 long (*getter)() = (long (*)())vVar->getter;
-                Serial.println(getter());
+                communication.sendLine(getter());
                 break;
             }
 #endif
 #if SERIALX_SUPPORT_DOUBLE
             case 'D': {
                 double (*getter)() = (double (*)())vVar->getter;
-                Serial.println(getter(), SERIALX_DOUBLE_PRECISION);
+                communication.sendLine(getter(), SERIALX_DOUBLE_PRECISION);
                 break;
             }
 #endif
@@ -329,77 +350,77 @@ void SerialXShell::getVariable(const char* cmd) {
 #if SERIALX_SUPPORT_BOOL
         case 'b': {
             bool* val = (bool*)var->variable;
-            Serial.println(*val ? 1 : 0);
+            communication.sendLine(*val ? 1 : 0);
             break;
         }
 #endif
 #if SERIALX_SUPPORT_INT
         case 'i': {
             int* val = (int*)var->variable;
-            Serial.println(*val);
+            communication.sendLine(*val);
             break;
         }
 #endif
 #if SERIALX_SUPPORT_FLOAT
         case 'f': {
             float* val = (float*)var->variable;
-            Serial.println(*val, 2);
+            communication.sendLine(*val, 2);
             break;
         }
 #endif
 #if SERIALX_SUPPORT_STRING
     case 's': {
-        String* val = (String*)var->variable;
-        Serial.println(*val); // Corretto: usa l'oggetto String di Arduino
+        StringType* val = (StringType*)var->variable;
+        communication.sendLine(*val); // Corretto: usa l'oggetto String di Arduino
         break;
     }
 #endif
 #if SERIALX_SUPPORT_CHAR
     case 'c': {
         char* val = (char*)var->variable;
-        Serial.println(*val);
+        communication.sendLine(*val);
         break;
     }
 #endif
 #if SERIALX_SUPPORT_CHARSTRING
         case 'C': {
             char* val = (char*)var->variable;
-            Serial.println(val);
+            communication.sendLine(val);
             break;
         }
 #endif
 #if SERIALX_SUPPORT_UINT8
         case 'u': {
             uint8_t* val = (uint8_t*)var->variable;
-            Serial.println(*val);
+            communication.sendLine(*val);
             break;
         }
 #endif
 #if SERIALX_SUPPORT_UINT16
         case 'w': {
             uint16_t* val = (uint16_t*)var->variable;
-            Serial.println(*val);
+            communication.sendLine(*val);
             break;
         }
 #endif
 #if SERIALX_SUPPORT_UINT32
         case 'd': {
             uint32_t* val = (uint32_t*)var->variable;
-            Serial.println(*val);
+            communication.sendLine(*val);
             break;
         }
 #endif
 #if SERIALX_SUPPORT_LONG
         case 'l': {
             long* val = (long*)var->variable;
-            Serial.println(*val);
+            communication.sendLine(*val);
             break;
         }
 #endif
 #if SERIALX_SUPPORT_DOUBLE
         case 'D': {
             double* val = (double*)var->variable;
-            Serial.println(*val, 2);
+            communication.sendLine(*val, 2);
             break;
         }
 #endif
@@ -473,9 +494,9 @@ void SerialXShell::setVariable(const char* cmd) {
         }
 #endif
 #if SERIALX_SUPPORT_STRING
-case 's': {
-    String* val = (String*)var->variable;
-    *val = String(value);
+case 's': {  
+    StringType* val = (StringType*)var->variable;
+    *val = StringType(value);
     break;
 }
 #endif
@@ -555,25 +576,32 @@ void SerialXShell::printHelp() {
     // List variables
     for (int i = 0; i < variableCount; i++) {
         SerialVariable* var = variables[i];
-        Serial.print(var->type);
-        Serial.print(var->canWrite ? F("x ") : F("o "));
-        Serial.println(var->name);
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%c%s%s",
+        var->type,
+        (var->canWrite ? "x " : "o "),
+        var->name);
+        communication.sendLine(StringType(buf));
         /*Serial.print(" ");
-        Serial.println(var->variable);*/
+        communication.sendLine(var->variable);*/
     }
     
     // List virtual variables (read-only)
     for (int i = 0; i < virtualVariableCount; i++) {
         SerialVirtualVariable* vVar = virtualVariables[i];
-        Serial.print(vVar->type);
-        Serial.print(F("o "));  // Virtual variables are always read-only
-        Serial.println(vVar->name);
+        char buf[64];
+        snprintf(buf, sizeof(buf), "%c%s%s",
+            vVar->type,
+            "o ",  // Virtual variables are always read-only
+            vVar->name);
+        communication.sendLine(StringType(buf));
     }
     
     // List functions
+    char buf[64];
     for (int i = 0; i < functionCount; i++) {
-        Serial.print(F("r "));
-        Serial.println(functions[i]->name);
+        snprintf(buf, sizeof(buf), "r %s", functions[i]->name);
+        communication.sendLine(StringType(buf));
     }
 }
 
@@ -592,45 +620,63 @@ void SerialXShell::authenticate(const char* key) {
 }
 
 void SerialXShell::printInfo() {
-    Serial.println(String(F("Device: ")) + String(deviceName));
-    Serial.println(String(F("Software: ")) + String(softwareVersion));
-    Serial.println(String(F("SerialX Version: ")) + String(SerialXShell::SerialX_MajorVersion) + "." + String(SerialXShell::SerialX_MinorVersion));
-    Serial.println(String(F("JIT Version: ")) + String(SerialXShell::SerialXJIT_MajorVersion) + "." + String(SerialXShell::SerialXJIT_MinorVersion));
-    Serial.print(String(F("Types supported: ")));
+    char buf[128];
+
+    snprintf(buf, sizeof(buf), "Device: %s", deviceName);
+    communication.sendLine(StringType(buf));
+
+    snprintf(buf, sizeof(buf), "Software: %s", softwareVersion);
+    communication.sendLine(StringType(buf));
+
+    snprintf(buf, sizeof(buf), "SerialX Version: %d.%d",
+             SerialXShell::SerialX_MajorVersion,
+             SerialXShell::SerialX_MinorVersion);
+    communication.sendLine(StringType(buf));
+
+    snprintf(buf, sizeof(buf), "JIT Version: %d.%d",
+             SerialXShell::SerialXJIT_MajorVersion,
+             SerialXShell::SerialXJIT_MinorVersion);
+    communication.sendLine(StringType(buf));
+
+    char types[64];
+    size_t pos = 0;
+    pos += snprintf(types + pos, sizeof(types) - pos, "Types supported: ");
+
 #if SERIALX_SUPPORT_BOOL
-    Serial.print(F("b"));
+    types[pos++] = 'b';
 #endif
 #if SERIALX_SUPPORT_INT
-    Serial.print(F("i"));
+    types[pos++] = 'i';
 #endif
 #if SERIALX_SUPPORT_FLOAT
-    Serial.print(F("f"));
+    types[pos++] = 'f';
 #endif
 #if SERIALX_SUPPORT_STRING
-    Serial.print(F("s"));
+    types[pos++] = 's';
 #endif
 #if SERIALX_SUPPORT_CHAR
-    Serial.print(F("c"));
+    types[pos++] = 'c';
 #endif
 #if SERIALX_SUPPORT_CHARSTRING
-    Serial.print(F("C"));
+    types[pos++] = 'C';
 #endif
 #if SERIALX_SUPPORT_UINT8
-    Serial.print(F("u"));
+    types[pos++] = 'u';
 #endif
 #if SERIALX_SUPPORT_UINT16
-    Serial.print(F("w"));
+    types[pos++] = 'w';
 #endif
 #if SERIALX_SUPPORT_UINT32
-    Serial.print(F("d"));
+    types[pos++] = 'd';
 #endif
 #if SERIALX_SUPPORT_LONG
-    Serial.print(F("l"));
+    types[pos++] = 'l';
 #endif
 #if SERIALX_SUPPORT_DOUBLE
-    Serial.print(F("D"));
+    types[pos++] = 'D';
 #endif
-    Serial.println();
+
+    communication.sendLine(StringType(types));
 }
 
 // ===== ADVANCED FEATURES =====
@@ -732,13 +778,13 @@ void SerialXShell::outputVariablesJSON(const char* varNames) {
         varCount++;
     }
     
-    Serial.println("}");
+    communication.sendLine("}");
 }
 #endif
 
 #if SERIALX_ENABLE_TIMESTAMP
 void SerialXShell::printTimestamp() {
-    Serial.println(millis());
+    communication.sendLine(millis());
 }
 
 void SerialXShell::printVariableWithTimestamp(const char* varName) {
@@ -756,22 +802,22 @@ void SerialXShell::printVariableWithTimestamp(const char* varName) {
     switch (var->type) {
         case 'b': {
             bool* val = (bool*)var->variable;
-            Serial.println(*val ? 1 : 0);
+            communication.sendLine(*val ? 1 : 0);
             break;
         }
         case 'i': {
             int* val = (int*)var->variable;
-            Serial.println(*val);
+            communication.sendLine(*val);
             break;
         }
         case 'f': {
             float* val = (float*)var->variable;
-            Serial.println(*val, 2);
+            communication.sendLine(*val, 2);
             break;
         }
         case 's': {
             char* val = (char*)var->variable;
-            Serial.println(val);
+            communication.sendLine(val);
             break;
         }
     }
@@ -781,7 +827,15 @@ void SerialXShell::printVariableWithTimestamp(const char* varName) {
 // ===== MAIN LOOP =====
 void SerialXShell::shellLoop() {
     if (!isCommunicationOpen) return;
-    
+    if (!communication.isClientConnected()) return;
+
+    StringType line;
+    if (communication.readLine(line)) {
+        if (line.length() > 0) {
+            handleCommand(line.c_str());
+        }
+    }
+    /*
     while (Serial.available()) {
         char c = Serial.read();
         
@@ -795,4 +849,5 @@ void SerialXShell::shellLoop() {
             inputBuffer[inputPos++] = c;
         }
     }
+    */
 }

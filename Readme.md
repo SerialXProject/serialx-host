@@ -1,34 +1,34 @@
 ![SerialX Icon](banner.png)
 
-# SerialX Arduino
+# SerialX Host
 
-Una libreria Arduino **leggera e veloce** per debug remoto, controllo e test di dispositivi embedded via porta seriale. Leggi/scrivi variabili e richiama funzioni tramite comandi testuali senza ricompilare.
+Una libreria Arduino **leggera e veloce** per debug remoto, controllo e test di dispositivi embedded via porta seriale. Permette di leggere/scrivere variabili e richiamare funzioni tramite comandi testuali senza dover ricompilare il codice. 
+
+Oltre all'utilizzo tramite porte seriali virtualizzate e arduino emulato, la libreria supporta anche la comunicazione di rete tramite il nuovo protocollo **Tcp/Net**, espandendone l'uso ai programmi C++ Desktop (non più *Arduino-Only*).
 
 **📖 Documentazione completa:** [SerialX Docs](https://serialxproject.github.io/serialx-docs)
 
 ## ⚡ Quick Start
 
-### Setup Minimo
+### Setup Minimo (Esempio Arduino)
 ```cpp
 #include "SerialXShell.h"
 
 int counter = 0;
 SerialXShell shell(9600, 10, 5);
 
-void reset()
-{
+void reset() {
     counter = 0;
 }
 
-int getTemp()
-{
+int getTemp() {
     return 5;
 }
 
 void setup() {
     shell.startCommunication();
     shell.addVariable(new SerialVariable("counter", counter, true));
-    shell.addVirtualVariable(new SerialVirtualVariable("temp", getTemp))
+    shell.addVirtualVariable(new SerialVirtualVariable("temp", getTemp));
     shell.addFunction(new SerialFunction("reset", reset));
 }
 
@@ -74,3 +74,7 @@ Vedi documentazione completa per dettagli.
 ## 🐛 Problemi Comuni
 
 **Variabile non si aggiorna:** Deve essere **globale**, non locale in `setup()`
+
+## Versione
+
+SerialX Host v1.1.0 - Aggiunto supporto per comunicazione Net/Tcp
