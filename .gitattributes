@@ -1,0 +1,17 @@
+* text=auto
+
+# Sorgenti, configurazione e documentazione
+*.c text eol=lf
+*.cpp text eol=lf
+*.h text eol=lf
+*.ino text eol=lf
+*.md text eol=lf
+*.properties text eol=lf
+*.ps1 text eol=lf
+
+# Risorse e artefatti binari eventualmente versionati
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.exe binary
