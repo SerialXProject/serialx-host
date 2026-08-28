@@ -2,6 +2,7 @@
 #include "SerialXCommunication.h"
 
 #include <iostream>
+#include <sstream>
 #include <cstring>
 #include <unistd.h>
 #include <arpa/inet.h>
@@ -110,28 +111,39 @@ bool SerialXCommunication::sendLine(const std::string& line) {
 }
 
 bool SerialXCommunication::sendLine() {
-    std::cout << std::endl;
-    return true;
+    return sendLine(std::string());
 }
 
-bool SerialXCommunication::sendLine(int value) { std::cout << value << std::endl; return true; }
-bool SerialXCommunication::sendLine(long value) { std::cout << value << std::endl; return true; }
-bool SerialXCommunication::sendLine(unsigned int value) { std::cout << value << std::endl; return true; }
-bool SerialXCommunication::sendLine(unsigned long value) { std::cout << value << std::endl; return true; }
+bool SerialXCommunication::sendLine(int value) {
+    return sendLine(std::to_string(value));
+}
+
+bool SerialXCommunication::sendLine(long value) {
+    return sendLine(std::to_string(value));
+}
+
+bool SerialXCommunication::sendLine(unsigned int value) {
+    return sendLine(std::to_string(value));
+}
+
+bool SerialXCommunication::sendLine(unsigned long value) {
+    return sendLine(std::to_string(value));
+}
 
 bool SerialXCommunication::sendLine(float value, int decimals) {
-    std::cout << std::fixed << std::setprecision(decimals) << value << std::endl;
-    return true;
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(decimals) << value;
+    return sendLine(oss.str());
 }
 
 bool SerialXCommunication::sendLine(double value, int decimals) {
-    std::cout << std::fixed << std::setprecision(decimals) << value << std::endl;
-    return true;
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(decimals) << value;
+    return sendLine(oss.str());
 }
 
 bool SerialXCommunication::sendLine(char value) {
-    std::cout << value << std::endl;
-    return true;
+    return sendLine(std::string(1, value));
 }
 
 void SerialXCommunication::close() {
