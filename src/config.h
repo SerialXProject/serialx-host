@@ -22,7 +22,7 @@
 #define SERIALX_DOUBLE_PRECISION 6
 
 // ===== OPTIONAL FEATURES =====
-#define SERIALX_SHOW_VALUES_IN_HELP 0 // Not implemented yet
+//#define SERIALX_SHOW_VALUES_IN_HELP 0 // Implement from client in future
 #define SERIALX_ENABLE_BATCH_CMD 0
 #define SERIALX_ENABLE_JSON_OUTPUT 0
 #define SERIALX_ENABLE_EEPROM 0
