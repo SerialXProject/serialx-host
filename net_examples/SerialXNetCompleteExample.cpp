@@ -62,13 +62,10 @@ int main() {
   // Register Virtual Variable
   shell.addVirtualVariable(new SerialVirtualVariable("sensor_read", sensorRead));
 
-  // Eseguiamo per qualche iterazione nei test per evitare loop infiniti bloccanti
-  for (int i = 0; i < 10; ++i)
+  // Il server deve restare attivo per tutta la durata della connessione TCP.
+  while (shell.IsCommunicationOpen())
   {
     shell.shellLoop();
-    
-    // Altre operazioni possono essere eseguite qui
-    this_thread::sleep_for(chrono::milliseconds(100));
   }
 
   cout << "Test terminato correttamente.\n";

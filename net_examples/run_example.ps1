@@ -6,7 +6,7 @@ g++ -Wall -std=c++11 -Isrc -Isrc/net net_examples/SerialXNetCompleteExample.cpp 
 
 # Check if compilation succeeded before launching
 if ($LASTEXITCODE -eq 0) {
-    Start-Process $outName
+    Start-Process $outName -Wait
 } else {
     Write-Error "Compilation failed with exit code $LASTEXITCODE"
 }
