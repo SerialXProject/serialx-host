@@ -1,5 +1,5 @@
 #ifdef ARDUINO // Serial Arduino
-#include "SerialXCommunication.h"
+#include "../SerialXCommunication.h"
 #include <Arduino.h>
 
 // Su Arduino, il parametro "port" viene interpretato come baud rate (es. 9600)

@@ -582,8 +582,6 @@ void SerialXShell::printHelp() {
         (var->canWrite ? "x " : "o "),
         var->name);
         communication.sendLine(StringType(buf));
-        /*Serial.print(" ");
-        communication.sendLine(var->variable);*/
     }
     
     // List virtual variables (read-only)
@@ -592,7 +590,7 @@ void SerialXShell::printHelp() {
         char buf[64];
         snprintf(buf, sizeof(buf), "%c%s%s",
             vVar->type,
-            "o ",  // Virtual variables are always read-only
+            "v ",  // Virtual variables are always read-only
             vVar->name);
         communication.sendLine(StringType(buf));
     }
