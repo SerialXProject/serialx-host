@@ -1,6 +1,11 @@
 ![SerialX Icon](banner.png)
 
 # SerialX Host
+![SerialX Host](https://img.shields.io/badge/SerialX_Host-v1.2.0-blue)
+
+![C++](https://img.shields.io/badge/C++-11-00599C?logo=cplusplus&logoColor=white)
+![Arduino](https://img.shields.io/badge/Arduino-Serial-00979D?logo=arduino&logoColor=white)
+![Net](https://img.shields.io/badge/Net-TCP-00599C)
 
 Una libreria Arduino **leggera e veloce** per debug remoto, controllo e test di dispositivi embedded via porta seriale. Permette di leggere/scrivere variabili e richiamare funzioni tramite comandi testuali senza dover ricompilare il codice. 
 
@@ -74,7 +79,3 @@ Vedi documentazione completa per dettagli.
 ## 🐛 Problemi Comuni
 
 **Variabile non si aggiorna:** Deve essere **globale**, non locale in `setup()`
-
-## Versione
-
-SerialX Host v1.1.0 - Aggiunto supporto per comunicazione Net/Tcp

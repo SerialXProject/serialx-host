@@ -55,10 +55,6 @@ Nessuna toolchain di build "vera": si valida compilando
   flash.
 - Non toccare `LICENSE`, `icon.png`, `banner.png` a meno di richiesta
   esplicita.
-- Non fidarti ciecamente dei commenti nel codice quando descrivono lo
-  stato di una feature (es. "Not implemented yet" su
-  `SERIALX_SHOW_VALUES_IN_HELP` in `config.h`): verificane lo stato reale
-  nel `.cpp` prima di dire all'utente se una feature è disponibile o no.
 - Non reintrodurre logging comandi o altre feature "a metà" dietro flag
   non definiti in `config.h` — se richiesto, va implementato per intero
   (vedi `AGENTS.md`, sezione "Cosa NON fare").

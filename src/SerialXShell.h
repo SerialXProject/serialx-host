@@ -19,10 +19,12 @@ public:
     
     ~SerialXShell();
     
-    static const int SerialX_MajorVersion;
-    static const int SerialX_MinorVersion;
-    static const int SerialXJIT_MajorVersion;
-    static const int SerialXJIT_MinorVersion;
+    static const uint8_t SerialXHost_MajorVersion;
+    static const uint8_t SerialXHost_MinorVersion;
+    static const uint8_t SerialX_MajorVersion;
+    static const uint8_t SerialX_MinorVersion;
+    static const uint8_t SerialXJIT_MajorVersion;
+    static const uint8_t SerialXJIT_MinorVersion;
     
     bool IsCommunicationOpen() const { return isCommunicationOpen; }
     void startCommunication();

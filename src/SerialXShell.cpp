@@ -1,11 +1,14 @@
 #include "SerialXShell.h"
+#include "SerialXCommunication.h"
 #include <string.h>
 #include <ctype.h>
 
-const int SerialXShell::SerialX_MajorVersion = 1;
-const int SerialXShell::SerialX_MinorVersion = 6;
-const int SerialXShell::SerialXJIT_MajorVersion = 1;
-const int SerialXShell::SerialXJIT_MinorVersion = 6;
+const uint8_t SerialXShell::SerialXHost_MajorVersion = 1;
+const uint8_t SerialXShell::SerialXHost_MinorVersion = 2;
+const uint8_t SerialXShell::SerialX_MajorVersion = 1;
+const uint8_t SerialXShell::SerialX_MinorVersion = 6;
+const uint8_t SerialXShell::SerialXJIT_MajorVersion = 1;
+const uint8_t SerialXShell::SerialXJIT_MinorVersion = 6;
 
 // Constructor (forse usare define)
 SerialXShell::SerialXShell(int baud, int maxVars, int maxFuncs, int maxVirtualVars, const char* accessPassKey, const char* deviceNameCustom, const char* softwareVersionCustom)
@@ -572,7 +575,35 @@ void SerialXShell::runFunction(const char* name) {
 }
 
 void SerialXShell::printHelp() {
-    
+#if defined(ARDUINO)
+    for (int i = 0; i < variableCount; i++) {
+        SerialVariable* var = variables[i];
+        Serial.print(var->type);
+        Serial.print(var->canWrite ? F("x ") : F("o "));
+        for (size_t j = 0; var->name[j] && j < 60; j++) {
+            Serial.print(var->name[j]);
+        }
+        Serial.println();
+    }
+
+    for (int i = 0; i < virtualVariableCount; i++) {
+        SerialVirtualVariable* vVar = virtualVariables[i];
+        Serial.print(vVar->type);
+        Serial.print(F("v "));
+        for (size_t j = 0; vVar->name[j] && j < 60; j++) {
+            Serial.print(vVar->name[j]);
+        }
+        Serial.println();
+    }
+
+    for (int i = 0; i < functionCount; i++) {
+        Serial.print(F("r "));
+        for (size_t j = 0; functions[i]->name[j] && j < 61; j++) {
+            Serial.print(functions[i]->name[j]);
+        }
+        Serial.println();
+    }
+#else
     // List variables
     for (int i = 0; i < variableCount; i++) {
         SerialVariable* var = variables[i];
@@ -601,6 +632,7 @@ void SerialXShell::printHelp() {
         snprintf(buf, sizeof(buf), "r %s", functions[i]->name);
         communication.sendLine(StringType(buf));
     }
+#endif
 }
 
 void SerialXShell::authenticate(const char* key) {
@@ -618,12 +650,39 @@ void SerialXShell::authenticate(const char* key) {
 }
 
 void SerialXShell::printInfo() {
+#if defined(ARDUINO)
+    Serial.print(F("Device: "));
+    Serial.println(deviceName);
+
+    Serial.print(F("Software: "));
+    Serial.println(softwareVersion);
+
+    Serial.print(F("SerialX Host Version: "));
+    Serial.print(SerialXShell::SerialXHost_MajorVersion);
+    Serial.print('.');
+    Serial.println(SerialXShell::SerialXHost_MinorVersion);
+
+    Serial.print(F("SerialX Version: "));
+    Serial.print(SerialXShell::SerialX_MajorVersion);
+    Serial.print('.');
+    Serial.println(SerialXShell::SerialX_MinorVersion);
+
+    Serial.print(F("JIT Version: "));
+    Serial.print(SerialXShell::SerialXJIT_MajorVersion);
+    Serial.print('.');
+    Serial.println(SerialXShell::SerialXJIT_MinorVersion);
+#else
     char buf[128];
 
     snprintf(buf, sizeof(buf), "Device: %s", deviceName);
     communication.sendLine(StringType(buf));
 
     snprintf(buf, sizeof(buf), "Software: %s", softwareVersion);
+    communication.sendLine(StringType(buf));
+
+    snprintf(buf, sizeof(buf), "SerialX Host Version: %d.%d",
+             SerialXShell::SerialXHost_MajorVersion,
+             SerialXShell::SerialXHost_MinorVersion);
     communication.sendLine(StringType(buf));
 
     snprintf(buf, sizeof(buf), "SerialX Version: %d.%d",
@@ -635,6 +694,7 @@ void SerialXShell::printInfo() {
              SerialXShell::SerialXJIT_MajorVersion,
              SerialXShell::SerialXJIT_MinorVersion);
     communication.sendLine(StringType(buf));
+#endif
 
     char types[64];
     size_t pos = 0;
@@ -833,19 +893,4 @@ void SerialXShell::shellLoop() {
             handleCommand(line.c_str());
         }
     }
-    /*
-    while (Serial.available()) {
-        char c = Serial.read();
-        
-        if (c == '\n' || c == '\r') {
-            if (inputPos > 0) {
-                inputBuffer[inputPos] = '\0';
-                handleCommand(inputBuffer);
-                inputPos = 0;
-            }
-        } else if (inputPos < SERIALX_INPUT_BUFFER_SIZE - 1) {
-            inputBuffer[inputPos++] = c;
-        }
-    }
-    */
 }
